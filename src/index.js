@@ -18,8 +18,9 @@ function isWebpackReady(getModuleIds) {
   });
 }
 
-function load(loader) {
-  let promise = loader();
+function load(loader, params) {
+  console.log('IN LOAD');
+  let promise = loader(params);
 
   let state = {
     loading: true,
@@ -104,13 +105,14 @@ function createLoadableComponent(loadFn, options) {
     render: render,
     webpack: null,
     modules: null,
+    propsToLoaderParams: props => props
   }, options);
 
   let res = null;
 
-  function init() {
+  function init(params) {
     if (!res) {
-      res = loadFn(opts.loader);
+      res = loadFn(opts.loader, params);
     }
     return res.promise;
   }
@@ -128,7 +130,7 @@ function createLoadableComponent(loadFn, options) {
   return class LoadableComponent extends React.Component {
     constructor(props) {
       super(props);
-      init();
+      init(opts.propsToLoaderParams(props));
 
       this.state = {
         error: res.error,
@@ -145,8 +147,8 @@ function createLoadableComponent(loadFn, options) {
       }),
     };
 
-    static preload() {
-      return init();
+    static preload(params) {
+      return init(params);
     }
 
     componentWillMount() {
